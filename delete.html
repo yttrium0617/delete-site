@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>投稿削除フォーム</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      padding: 30px;
+      max-width: 500px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      font-size: 1em;
+      margin-top: 5px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 20px;
+      padding: 12px;
+      width: 100%;
+      font-size: 1em;
+      background: #d9534f;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .message {
+      margin-top: 20px;
+      padding: 10px;
+      background: #fff;
+      border-radius: 5px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🗑 投稿削除フォーム</h1>
+  <p>ゲーム投稿の「タイムスタンプ（投稿ID）」と「削除キー」を入力してください。</p>
+
+  <label for="gameId">ゲームID（タイムスタンプ）</label>
+  <input type="text" id="gameId" placeholder="例：2025/06/26 10:12:34">
+
+  <label for="deleteKey">削除キー</label>
+  <input type="password" id="deleteKey" placeholder="投稿時に設定した削除キー">
+
+  <button onclick="attemptDelete()">削除する</button>
+
+  <div class="message" id="messageBox"></div>
+
+  <script>
+    const SHEET_API = "https://sheetdb.io/api/v1/ir988y81fa5qp";
+
+    async function attemptDelete() {
+      const gameId = document.getElementById('gameId').value.trim();
+      const deleteKey = document.getElementById('deleteKey').value.trim();
+      const messageBox = document.getElementById('messageBox');
+
+      if (!gameId || !deleteKey) {
+        messageBox.innerHTML = "⚠ ゲームIDと削除キーを入力してください";
+        return;
+      }
+
+      messageBox.innerHTML = "🔍 投稿を確認中...";
+
+      // データ取得
+      const res = await fetch(SHEET_API);
+      const data = await res.json();
+
+      // ゲームIDと削除キーが一致する投稿を探す
+      const target = data.find(row => row['タイムスタンプ'] === gameId && row['削除キー'] === deleteKey);
+
+      if (!target) {
+        messageBox.innerHTML = "❌ 一致する投稿が見つかりません。ゲームIDと削除キーを確認してください。";
+        return;
+      }
+
+      // 一致したら削除
+      const deleteUrl = `${SHEET_API}/タイムスタンプ/${encodeURIComponent(gameId)}`;
+      const deleteRes = await fetch(deleteUrl, { method: "DELETE" });
+
+      if (deleteRes.ok) {
+        messageBox.innerHTML = "✅ 投稿を削除しました。ページを再読み込みしてください。";
+      } else {
+        messageBox.innerHTML = "⚠ 削除に失敗しました。もう一度試してください。";
+      }
+    }
+  </script>
+
+</body>
+</html>
